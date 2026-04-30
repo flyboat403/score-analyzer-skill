@@ -104,7 +104,6 @@ def simple_markdown_to_html_with_tables(text):
             
             # Detect if this is the separator row (e.g., |:---|:---:| or |---|---|)
             # Regex to match only dashes and optional colons at start/end
-            import re
             is_separator = all(re.match(r'^:?-+:?$', c) for c in raw_cells)
             
             if is_separator:

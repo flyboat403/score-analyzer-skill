@@ -19,7 +19,7 @@ A skill package—not a library or application. The SKILL.md defines triggers an
 
 ## Chart Placeholders
 
-Use these exact placeholders in Markdown report:
+Use these exact placeholders in Markdown report (Total 12):
 - `![分数分布图](PLOT:DISTRIBUTION)` — subject score comparison (mean/max/min/median)
 - `![分组对比图](PLOT:COMPARISON)` — class/group comparison (requires grouping data)
 - `![雷达图](PLOT:RADAR)` — multi-subject radar (requires grouping data)
@@ -29,8 +29,11 @@ Use these exact placeholders in Markdown report:
 - `![科目相关性图](PLOT:HEATMAP)` — subject correlation heatmap
 - `![学生偏离度图](PLOT:DEVIATION)` — top10 deviation from mean
 - `![尖子生对比图](PLOT:TOP_BOTTOM)` — top vs bottom quartile
+- `![累积分布图](PLOT:CDF)` — cumulative distribution (essential for pass rate analysis)
+- `![散点回归图](PLOT:SCATTER)` — subject vs total score correlation
+- `![箱线对比图](PLOT:BOXPLOT_SUBJ)` — subject-wise box plot comparison
 
-**Note**: Radar/Comparison/Boxplot charts require grouping data (student_class/student_major/student_school). If no grouping available, these charts are skipped — resulting in 6-8 charts instead of 9.
+**Note**: Radar/Comparison/Boxplot charts require grouping data (student_class/student_major/student_school). If no grouping available, these charts are skipped — resulting in 9 charts instead of 12.
 
 ## Environment
 
