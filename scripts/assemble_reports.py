@@ -189,7 +189,7 @@ def create_word_report(markdown_text, image_paths, output_path):
                 found = False
                 for name, path in image_paths.items():
                     name_normalized = name.lower().replace(' ', '').replace('-', '')
-                    if name_normalized == chart_name_lower or name.lower() == chart_name_key.lower():
+                    if name_normalized == chart_name_lower:
                         if path and os.path.exists(path):
                             try:
                                 doc.add_picture(path, width=Inches(6))
@@ -271,27 +271,37 @@ def create_html_report(markdown_text, image_paths, output_path):
         '尖子生对比图': '尖子生对比图',
     }
 
+    unique_files = {}
     for name, path in image_paths.items():
         if os.path.exists(path):
-            with open(path, 'rb') as f:
-                img_data = f.read()
-            base64_data = base64.b64encode(img_data).decode('utf-8')
-            img_data_uri = f'data:image/png;base64,{base64_data}'
-            alt_text = alt_texts.get(name, alt_texts.get(name.upper(), alt_texts.get(name.lower(), name)))
+            unique_files[path] = unique_files.get(path, [])
+            unique_files[path].append(name)
 
-            for name_variant in [name, name.upper(), name.lower()]:
-                old_formats = [
-                    f'![{alt_text}](PLOT:{name_variant})',
-                    f'![{name}](PLOT:{name_variant})',
-                ]
-                for old_format in old_formats:
-                    content = content.replace(old_format, f'<img src="{img_data_uri}" alt="{alt_text}">')
+    for path, keys in unique_files.items():
+        with open(path, 'rb') as f:
+            img_data = f.read()
+        base64_data = base64.b64encode(img_data).decode('utf-8')
+        img_data_uri = f'data:image/png;base64,{base64_data}'
 
-                old_formats_compact = [
-                    f'[PLOT:{name_variant}]',
-                ]
-                for old_format in old_formats_compact:
-                    content = content.replace(old_format, f'<img src="{img_data_uri}" alt="{alt_text}">')
+        alt_text = ''
+        for k in keys:
+            upper_key = k.upper()
+            if upper_key in alt_texts:
+                alt_text = alt_texts[upper_key]
+                break
+        if not alt_text:
+            alt_text = keys[0] if keys else 'chart'
+
+        for key in keys:
+            upper_key = key.upper()
+            if not upper_key.isascii():
+                continue
+            for variant in [upper_key, upper_key.lower(), upper_key.capitalize()]:
+                regex_pattern = r'!\[[^\]]*\]\(PLOT:' + re.escape(variant) + r'\)'
+                content = re.sub(regex_pattern, f'<img src="{img_data_uri}" alt="{alt_text}">', content)
+
+            compact_regex = r'\[PLOT:' + re.escape(upper_key) + r'\]'
+            content = re.sub(compact_regex, f'<img src="{img_data_uri}" alt="{alt_text}">', content)
 
     html += '<div>' + content + '</div></body></html>'
 
