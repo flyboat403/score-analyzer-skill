@@ -19,60 +19,33 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 
 ## Quick Start
 
-When user provides an Excel file:
+### Phase 1: Data Preparation
+1.  **Extract**: `python3 scripts/extract_data.py --input <file> --output reports/data.csv`
+2.  **Clean**: Remove invalid data/grades (A/B/C). **Must Run**: `python3 scripts/data_cleaner.py --input reports/data.csv --output reports/data.csv`
+3.  **Tag (Recommended)**: `python3 scripts/tagger.py --input reports/data.csv --output reports/students_tags.csv` (Generates "偏科预警" etc.)
+4.  **Individual Reports (Optional)**: `python3 scripts/individual_reports.py --input reports/data.csv --output reports/individual_reports`
 
-### Step 1: Extract Data (Agent uses LLM)
-
-**Do NOT run `extract_data.py`**. Instead, use Python directly with pandas to read the Excel file:
-
-```python
-import pandas as pd
-import openpyxl
-
-# Read Excel structure to understand the layout
-xl = pd.ExcelFile('input.xlsx')
-for sheet in xl.sheet_names:
-    df = pd.read_excel(xl, sheet_name=sheet, nrows=10)
-    # Agent uses intelligence to identify:
-    # - Header row location (by scanning for keywords like 学号/姓名/科目/分数)
-    # - Column types (ID, name, class, subject scores)
-    # - Score columns vs metadata columns
-    # - Grouping dimensions (class/major/school)
-```
-
-Agent analyzes the raw data with Python, calculates statistics (mean, std, percentiles, correlations), and discovers patterns using its LLM intelligence.
-
-### Step 2: Analyze + Write Report
-
-Read `references/analysis_prompt.md` for detailed instructions. In short:
-
-1. With the data loaded in Python, compute per-subject statistics and score distributions
-2. **Discover patterns from the actual data**: subject strengths/weaknesses, distribution skew, correlations, top vs bottom performers
-3. Write the full Markdown analysis report — cite specific numbers, explain what they mean, provide actionable improvement suggestions
-4. Include chart placeholders (see template below) in the report
-
-### Step 3: Generate Charts
-```bash
-python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/
-```
-
-### Step 4: Assemble Reports
-```bash
-python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "YOUR_MARKDOWN_REPORT" --output reports/
-```
-
-### Step 5: Deliver
-Present `reports/report.zip` (contains .docx + .html + charts)
+### Phase 2: Analysis & Generation
+1.  **Analyze**: Agent reads data, finds patterns, writes full Markdown report.
+    - Read `references/analysis_prompt.md` for guidelines.
+    - MUST include dynamic stats, fine-grained segments, and 12 chart placeholders.
+2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
+3.  **Assemble**: `python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "REPORT.md" --output reports/`
+4.  **Deliver**: `reports/report.zip`
 
 ## Chart Placeholders & Template
 
 **For the full report structure and analysis guidelines, READ:** [`references/analysis_prompt.md`](references/analysis_prompt.md)
 
-**Mandatory Chart Placeholders** (use exact strings — scripts detect these via regex):
-- General: `PLOT:DISTRIBUTION`, `PLOT:NORMAL`, `PLOT:TREND`, `PLOT:HEATMAP`, `PLOT:DEVIATION`, `PLOT:TOP_BOTTOM`
-- Grouping-only: `PLOT:COMPARISON`, `PLOT:RADAR`, `PLOT:BOXPLOT` (Only include if `student_class`/`student_major`/`student_school` data exists!)
+**Mandatory Chart Placeholders** (ALL 12 maps MUST be included in the report — do NOT skip any!):
+- **Overview**: `PLOT:DISTRIBUTION`, `PLOT:CDF`, `PLOT:NORMAL`
+- **Comparison**: `PLOT:TREND`, `PLOT:HEATMAP`, `PLOT:BOXPLOT_SUBJ`
+- **Gap/Spread**: `PLOT:SCATTER`, `PLOT:TOP_BOTTOM`, `PLOT:DEVIATION`
+- **Grouped**: `PLOT:COMPARISON`, `PLOT:RADAR`, `PLOT:BOXPLOT`
 
-**NEVER** include Grouping-only placeholders if the Excel lacks grouping columns — they will fail to embed.
+**NEVER** include chart placeholders if chart generation failed — but ALWAYS ensure the markdown text includes exactly 12 placeholders if charts were generated successfully.
+
+**NEVER** write a minimal text report. Must include dynamic passing rates, fine-grained segments, and granular actionable advice.
 
 ## 🔧 Decision Tree (Before Starting)
 

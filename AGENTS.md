@@ -8,11 +8,14 @@ A skill package—not a library or application. The SKILL.md defines triggers an
 
 ## Workflow (Strict Order)
 
-1. **Extract Data**: Agent reads the xlsx file directly with Python (pandas/openpyxl) — use LLM intelligence to identify headers, subject columns, grouping fields
-2. **Analyze + Write Report**: Read `references/analysis_prompt.md` → find patterns from data → write Markdown with statistics, narrative analysis, and chart placeholders
-3. **Generate Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
-4. **Assemble Reports**: `python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "MARKDOWN" --output reports/`
-5. **Deliver**: `reports/report.zip` (contains .docx + .html + charts)
+1. **Extract Data**: Agent reads the xlsx file directly with Python (pandas/openpyxl) or use `extract_data.py`. Save as `reports/data.csv` (Long Format: `student_id`, `student_name`, `subject`, `value`).
+2. **Clean Data**: `python3 scripts/data_cleaner.py --input reports/data.csv --output reports/cleaned_data.csv`. (Handles "A/B/C", "缺考" cases). Use `cleaned_data.csv` for further steps.
+3. **Tag Students (Optional but Recommended)**: `python3 scripts/tagger.py --input reports/cleaned_data.csv --output reports/students_tags.csv`. Produces "偏科预警", "临界踩线", etc.
+4. **Generate Individual Reports**: `python3 scripts/individual_reports.py --input reports/cleaned_data.csv --output reports/individual_reports`. Produces HTML "体检单" per student.
+5. **Analyze + Write Report**: Read `cleaned_data.csv` and `students_tags.csv` → find patterns → write Markdown with statistics and chart placeholders.
+6. **Generate Charts**: `python3 scripts/generate_charts.py --input reports/cleaned_data.csv --output reports/charts/`.
+7. **Assemble Reports**: `python3 scripts/assemble_reports.py --data reports/cleaned_data.csv --charts reports/charts/ --report "MARKDOWN" --output reports/`.
+8. **Deliver**: `reports/report.zip` (contains .docx + .html + charts + individual reports CSV if added).
 
 ## Chart Placeholders
 

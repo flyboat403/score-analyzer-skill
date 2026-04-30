@@ -102,7 +102,7 @@ def parse_sheet_with_llm_like_patterns(df_raw, sheet_name: str) -> tuple:
             col_type = "grade"
         elif any(keyword in header_text for keyword in ["学校", "School"]):
             col_type = "school"
-        elif any(keyword in header_text for keyword in ["专业", "Major"]):
+        elif header_text_normalized == "专业" or any(keyword in header_text_normalized for keyword in ["Major"]):
             col_type = "major"
         elif any(keyword in header_text_normalized for keyword in ["总分", "汇总", "Total", "平均分"]):
             col_type = "calculated"

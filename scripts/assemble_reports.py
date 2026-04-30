@@ -91,35 +91,68 @@ def simple_markdown_to_html_with_tables(text):
             continue
 
         line_stripped = line.strip()
-        is_table = line_stripped.startswith('|') and line_stripped.endswith('|')
+        is_table_row = line_stripped.startswith('|') and line_stripped.endswith('|')
 
-        if is_table:
+        if is_table_row:
             if not in_table:
                 in_table = True
                 table_rows = []
-            cells = [cell.strip() for cell in line_stripped.split('|')][1:-1]
-            is_separator = all(set(cell.replace(' ', '')) == {'-'} for cell in cells)
-            if not is_separator:
-                table_rows.append(cells)
+                table_alignments = [] # Initialize alignment map
+            
+            # Parse cells
+            raw_cells = [cell.strip() for cell in line_stripped.split('|')][1:-1]
+            
+            # Detect if this is the separator row (e.g., |:---|:---:| or |---|---|)
+            # Regex to match only dashes and optional colons at start/end
+            import re
+            is_separator = all(re.match(r'^:?-+:?$', c) for c in raw_cells)
+            
+            if is_separator:
+                # Extract alignment info
+                align_map = []
+                for cell in raw_cells:
+                    if cell.startswith(':') and cell.endswith(':'):
+                        align_map.append('text-align:center;')
+                    elif cell.startswith(':'):
+                        align_map.append('text-align:left;')
+                    elif cell.endswith(':'):
+                        align_map.append('text-align:right;')
+                    else:
+                        align_map.append('')
+                table_alignments = align_map
+            else:
+                table_rows.append(raw_cells)
             continue
 
+        # End of table block processing
         if in_table and table_rows:
             html.append('<table class="data-table"><thead><tr>')
-            for i, cells in enumerate(table_rows):
-                tag = 'th' if i == 0 else 'td'
-                if i == 0:
-                    for cell in cells:
-                        html.append(f'<th>{cell.strip()}</th>')
-                    html.append('</tr></thead><tbody>')
-                else:
-                    if i == 1:
-                        html.append('<tr>')
-                    for cell in cells:
-                        html.append(f'<td>{cell.strip()}</td>')
-                    html.append('</tr>')
+            
+            # Process Header (first row)
+            if table_alignments and len(table_alignments) >= len(table_rows[0]):
+                header_styles = table_alignments
+            else:
+                header_styles = [''] * len(table_rows[0])
+                
+            for idx, cell in enumerate(table_rows[0]):
+                style = header_styles[idx] if idx < len(header_styles) else ''
+                html.append(f'<th style="{style}">{cell.strip()}</th>')
+            
+            html.append('</tr></thead><tbody>')
+
+            # Process Data rows
+            for i in range(1, len(table_rows)):
+                cells = table_rows[i]
+                html.append('<tr>')
+                for idx, cell in enumerate(cells):
+                    style = header_styles[idx] if idx < len(header_styles) else ''
+                    html.append(f'<td style="{style}">{cell.strip()}</td>')
+                html.append('</tr>')
+            
             html.append('</tbody></table>')
             in_table = False
             table_rows = []
+            table_alignments = [] # Reset alignments
 
         if not line_stripped:
             html.append('<br>')
