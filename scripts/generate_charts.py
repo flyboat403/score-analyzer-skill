@@ -672,6 +672,130 @@ class ChartGenerator:
         plt.close()
         return path if save else fig
 
+    def plot_scatter_with_regression(self, save=True):
+        """Scatter plot with regression lines: Total_Score vs each subject."""
+        fig, ax = plt.subplots(figsize=(10, 6))
+        wide = self.analyzer.get_wide_format()
+
+        if 'Total_Score' not in wide.columns:
+            ax.text(0.5, 0.5, '无数据', ha='center', va='center', fontsize=14,
+                   transform=ax.transAxes, fontproperties=self.font_prop)
+            path = os.path.join(self.output_dir, 'scatter_regression.png')
+            if save:
+                plt.savefig(path, dpi=CHART_CONFIG["dpi"], bbox_inches='tight',
+                           facecolor=CHART_CONFIG["figure_bg"])
+            plt.close()
+            return path if save else fig
+
+        group_col, _ = self.analyzer.get_best_grouping()
+        index_cols = ['student_id', 'student_name']
+        if group_col in wide.columns:
+            index_cols.append(group_col)
+        subject_cols = [c for c in wide.columns if c not in index_cols + ['Total_Score']]
+
+        if not subject_cols:
+            ax.text(0.5, 0.5, '无数据', ha='center', va='center', fontsize=14,
+                   transform=ax.transAxes, fontproperties=self.font_prop)
+            path = os.path.join(self.output_dir, 'scatter_regression.png')
+            if save:
+                plt.savefig(path, dpi=CHART_CONFIG["dpi"], bbox_inches='tight',
+                           facecolor=CHART_CONFIG["figure_bg"])
+            plt.close()
+            return path if save else fig
+
+        palette = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
+        for i, subj in enumerate(subject_cols):
+            valid = wide[['Total_Score', subj]].dropna()
+            if len(valid) < 3:
+                continue
+            x = valid['Total_Score'].values
+            y = valid[subj].values
+            ax.scatter(x, y, alpha=0.3, s=10, label=subj, color=palette[i % len(palette)])
+
+            z = np.polyfit(x, y, 1)
+            p = np.poly1d(z)
+            x_line = np.linspace(x.min(), x.max(), 100)
+            ax.plot(x_line, p(x_line), '--', color=palette[i % len(palette)], linewidth=1.5, alpha=0.7)
+
+        ax.set_xlabel('总分', fontproperties=self.font_prop)
+        ax.set_ylabel('学科分数', fontproperties=self.font_prop)
+        ax.set_title('总分与学科相关性分析', fontproperties=self.font_prop, fontsize=14, fontweight='bold')
+        ax.legend(prop=self.font_prop, fontsize=8)
+        ax.grid(True, alpha=0.3)
+
+        path = os.path.join(self.output_dir, 'scatter_regression.png')
+        if save:
+            plt.savefig(path, dpi=CHART_CONFIG["dpi"], bbox_inches='tight',
+                       facecolor=CHART_CONFIG["figure_bg"])
+        plt.close()
+        return path if save else fig
+
+    def plot_cdf_curve(self, save=True):
+        """Cumulative distribution function for each subject."""
+        fig, ax = plt.subplots(figsize=(10, 6))
+        subjects = self.analyzer.df['subject'].unique()
+        palette = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c']
+
+        for i, subj in enumerate(subjects[:6]):
+            scores = self.analyzer.df[self.analyzer.df['subject'] == subj]['value'].dropna().sort_values()
+            if len(scores) < 2:
+                continue
+            # Compute CDF
+            y = np.arange(1, len(scores) + 1) / len(scores)
+            ax.plot(scores, y, marker='', linewidth=2, label=subj, color=palette[i % len(palette)])
+
+        ax.set_xlabel('分数', fontproperties=self.font_prop)
+        ax.set_ylabel('累积概率', fontproperties=self.font_prop)
+        ax.set_title('成绩累积分布曲线 (CDF)', fontproperties=self.font_prop, fontsize=14, fontweight='bold')
+        ax.set_ylim(0, 1.02)
+        ax.legend(prop=self.font_prop)
+        ax.grid(True, alpha=0.3)
+
+        path = os.path.join(self.output_dir, 'cdf_curve.png')
+        if save:
+            plt.savefig(path, dpi=CHART_CONFIG["dpi"], bbox_inches='tight',
+                       facecolor=CHART_CONFIG["figure_bg"])
+        plt.close()
+        return path if save else fig
+
+    def plot_subject_boxplot(self, save=True):
+        """Box plot comparing distributions across subjects."""
+        fig, ax = plt.subplots(figsize=(12, 6))
+        subjects = self.analyzer.df['subject'].unique()
+
+        data_for_plot = []
+        labels_for_plot = []
+
+        for subj in subjects:
+            scores = self.analyzer.df[self.analyzer.df['subject'] == subj]['value'].dropna()
+            if len(scores) >= 4:
+                data_for_plot.append(scores.values)
+                labels_for_plot.append(subj)
+
+        if not data_for_plot:
+            ax.text(0.5, 0.5, '无足够数据', ha='center', va='center', fontsize=14,
+                   transform=ax.transAxes, fontproperties=self.font_prop)
+            path = os.path.join(self.output_dir, 'subj_boxplot.png')
+            if save:
+                plt.savefig(path, dpi=CHART_CONFIG["dpi"], bbox_inches='tight',
+                           facecolor=CHART_CONFIG["figure_bg"])
+            plt.close()
+            return path if save else fig
+
+        bp = ax.boxplot(data_for_plot, patch_artist=True,
+                       boxprops=dict(facecolor='#3498db', alpha=0.5))
+        ax.set_xticklabels(labels_for_plot, fontproperties=self.font_prop, rotation=45, ha='right')
+        ax.set_title('各科成绩分布对比 (箱线图)', fontproperties=self.font_prop, fontsize=14, fontweight='bold')
+        ax.set_ylabel('分数', fontproperties=self.font_prop)
+        ax.grid(True, alpha=0.3, axis='y')
+
+        path = os.path.join(self.output_dir, 'subj_boxplot.png')
+        if save:
+            plt.savefig(path, dpi=CHART_CONFIG["dpi"], bbox_inches='tight',
+                       facecolor=CHART_CONFIG["figure_bg"])
+        plt.close()
+        return path if save else fig
+
     def generate_all(self):
         """Generate all charts."""
         paths = {}
@@ -686,6 +810,9 @@ class ChartGenerator:
             ('heatmap', self.plot_correlation_heatmap),
             ('deviation', self.plot_student_deviation),
             ('top_bottom', self.plot_top_bottom_comparison),
+            ('scatter', self.plot_scatter_with_regression),
+            ('cdf', self.plot_cdf_curve),
+            ('boxplot_subj', self.plot_subject_boxplot),
         ]
 
         for name, plot_fn in base_plots:
