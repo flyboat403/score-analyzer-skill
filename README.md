@@ -52,19 +52,33 @@ python3 scripts/tagger.py --input reports/data.csv --output reports/students_tag
 python3 scripts/individual_reports.py --input reports/data.csv --output reports/individual_reports
 ```
 
-### 5. 生成图表
+### 5. 计算动态阈值（必须执行）
+
+```bash
+python3 scripts/dynamic_thresholds.py --input reports/data.csv --output reports/dynamic_thresholds.json
+```
+
+输出 JSON 包含：
+- 动态及格线 (D-G = P80百分位数)
+- 动态及格率
+- 相对优秀线 (D-E = P20百分位数)
+- 绝对及格率/优秀率对比
+- 各科目动态阈值
+- 解读建议（题目极难时如何解释）
+
+### 6. 生成图表
 
 ```bash
 python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/
 ```
 
-### 6. 组装最终报告
+### 7. 组装最终报告
 
 ```bash
 python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "reports/report_content.md" --output reports/
 ```
 
-### 7. 交付
+### 8. 交付
 
 最终输出：`reports/report.zip`
 
@@ -76,7 +90,8 @@ python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/cha
 | 1 | 清洗 | `data_cleaner.py` | `cleaned_data.csv` |
 | 1 | 标签 | `tagger.py` | `students_tags.csv` |
 | 1 | 个人报告 | `individual_reports.py` | `individual_reports/*.html` |
-| 2 | 分析 | Agent 智能 | `report_content.md` |
+| 1 | 动态阈值 | `dynamic_thresholds.py` | `dynamic_thresholds.json` |
+| 2 | 分析 | Agent 智能 + JSON | `report_content.md` |
 | 2 | 图表 | `generate_charts.py` | `charts/*.png` |
 | 2 | 组装 | `assemble_reports.py` | `report.docx`, `report.html` |
 | 2 | 打包 | ZIP | `report.zip` |
@@ -108,6 +123,7 @@ python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/cha
 reports/
 ├── data.csv              # 标准化长格式数据
 ├── students_tags.csv     # 学生分类标签
+├── dynamic_thresholds.json  # 动态阈值指标（D-G, D-E等）
 ├── charts/
 │   ├── score_distribution.png
 │   ├── cdf_curve.png
@@ -139,6 +155,7 @@ reports/
 - ✓ 成绩列无空值/NaN
 - ✓ 标签文件已生成
 - ✓ 标签数与学生数匹配
+- ✓ 动态阈值文件已生成（`dynamic_thresholds.json`）
 
 ### Phase 2 验证（输出质量）
 

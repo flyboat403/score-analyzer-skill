@@ -24,18 +24,24 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 2.  **Clean**: Remove invalid data/grades (A/B/C). **Must Run**: `python3 scripts/data_cleaner.py --input reports/data.csv --output reports/data.csv`
 3.  **Tag (Recommended)**: `python3 scripts/tagger.py --input reports/data.csv --output reports/students_tags.csv` (Generates "偏科预警" etc.)
 4.  **Individual Reports (Optional)**: `python3 scripts/individual_reports.py --input reports/data.csv --output reports/individual_reports`
-5.  **Verify Phase 1 (MANDATORY)**: Before proceeding to analysis, validate data quality:
+5.  **Dynamic Thresholds (MANDATORY)**: Calculate percentile-based passing/excellent thresholds.
+    - `python3 scripts/dynamic_thresholds.py --input reports/data.csv --output reports/dynamic_thresholds.json`
+    - Output JSON contains: D-G (P80 passing line), D-E (P20 excellent line), pass rates.
+    - Read this file when writing the report — provides dynamic metrics to interpret difficult exams.
+6.  **Verify Phase 1 (MANDATORY)**: Before proceeding to analysis, validate data quality:
     - **Cleaned data exists**: `reports/data.csv` (or `cleaned_data.csv`) file present?
     - **Data rows reasonable**: Count > 0 and ≤ original Excel rows?
     - **No empty values**: Check `value` column has no NaN/null entries?
     - **Tag file exists**: `students_tags.csv` generated?
     - **Tags match students**: Tag file rows = unique student count in data?
+    - **Dynamic thresholds file**: `reports/dynamic_thresholds.json` generated?
     - If ANY check fails → fix data issues before continuing.
 
 ### Phase 2: Analysis & Generation
 1.  **Analyze**: Agent reads data, finds patterns, writes full Markdown report.
+    - **MANDATORY**: Read `reports/dynamic_thresholds.json` for percentile-based metrics.
     - Read `references/analysis_prompt.md` for guidelines.
-    - MUST include dynamic stats, fine-grained segments, and 12 chart placeholders.
+    - MUST include dynamic stats (D-G, D-E from JSON), fine-grained segments, and 12 chart placeholders.
 2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
 3.  **Assemble**: `python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "REPORT.md" --output reports/`
 4.  **Verify (MANDATORY)**: Before delivering, check all outputs:
