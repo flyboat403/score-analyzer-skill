@@ -24,6 +24,13 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 2.  **Clean**: Remove invalid data/grades (A/B/C). **Must Run**: `python3 scripts/data_cleaner.py --input reports/data.csv --output reports/data.csv`
 3.  **Tag (Recommended)**: `python3 scripts/tagger.py --input reports/data.csv --output reports/students_tags.csv` (Generates "偏科预警" etc.)
 4.  **Individual Reports (Optional)**: `python3 scripts/individual_reports.py --input reports/data.csv --output reports/individual_reports`
+5.  **Verify Phase 1 (MANDATORY)**: Before proceeding to analysis, validate data quality:
+    - **Cleaned data exists**: `reports/data.csv` (or `cleaned_data.csv`) file present?
+    - **Data rows reasonable**: Count > 0 and ≤ original Excel rows?
+    - **No empty values**: Check `value` column has no NaN/null entries?
+    - **Tag file exists**: `students_tags.csv` generated?
+    - **Tags match students**: Tag file rows = unique student count in data?
+    - If ANY check fails → fix data issues before continuing.
 
 ### Phase 2: Analysis & Generation
 1.  **Analyze**: Agent reads data, finds patterns, writes full Markdown report.
@@ -31,17 +38,42 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
     - MUST include dynamic stats, fine-grained segments, and 12 chart placeholders.
 2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
 3.  **Assemble**: `python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "REPORT.md" --output reports/`
-4.  **Deliver**: `reports/report.zip`
+4.  **Verify (MANDATORY)**: Before delivering, check all outputs:
+    - **Dynamic passing/excellent rates**: Report.md contains "及格率" / "优秀率" keywords?
+    - **Fine-grained score segments**: Report.md contains segment stats (e.g., "90-100分", "80-89分")?
+    - **Charts**: `ls reports/charts/*.png | wc -l` equals 12 (or 9 if no grouping)?
+    - **Individual reports**: `ls reports/individual_reports/*.html | wc -l` equals student count?
+    - **HTML report**: `reports/report.html` exists and contains embedded charts (base64)?
+    - **Word report**: `reports/report.docx` exists and size > 100KB?
+    - **Data consistency (Cross-Phase)**:
+        - Student count in report matches data file row count?
+        - Subject count in report matches unique subjects in data?
+        - If report mentions "共XX名学生" or "XX科目" → verify against actual data counts.
+    - If ANY check fails → report issue to user before continuing.
+5.  **Deliver**: `reports/report.zip`
 
 ## Chart Placeholders & Template
 
 **For the full report structure and analysis guidelines, READ:** [`references/analysis_prompt.md`](references/analysis_prompt.md)
 
-**Mandatory Chart Placeholders** (ALL 12 maps MUST be included in the report — do NOT skip any!):
-- **Overview**: `PLOT:DISTRIBUTION`, `PLOT:CDF`, `PLOT:NORMAL`
-- **Comparison**: `PLOT:TREND`, `PLOT:HEATMAP`, `PLOT:BOXPLOT_SUBJ`
-- **Gap/Spread**: `PLOT:SCATTER`, `PLOT:TOP_BOTTOM`, `PLOT:DEVIATION`
-- **Grouped**: `PLOT:COMPARISON`, `PLOT:RADAR`, `PLOT:BOXPLOT`
+**Mandatory Chart Placeholders** (include all that apply — match count to generated charts):
+
+| Category | Placeholder | Chart |
+|----------|-------------|-------|
+| Overview | `PLOT:DISTRIBUTION` | Score distribution histogram |
+| | `PLOT:CDF` | Cumulative distribution function |
+| | `PLOT:NORMAL` | Normal distribution Q-Q plot |
+| Comparison | `PLOT:TREND` | Subject mean trends |
+| | `PLOT:HEATMAP` | Class/subject heatmap |
+| | `PLOT:BOXPLOT_SUBJ` | Subject box plots |
+| Gap/Spread | `PLOT:SCATTER` | Total vs subject scatter |
+| | `PLOT:TOP_BOTTOM` | Top vs bottom N comparison |
+| | `PLOT:DEVIATION` | Score deviation analysis |
+| Grouped* | `PLOT:COMPARISON` | Inter-class comparison |
+| | `PLOT:RADAR` | Class radar chart |
+| | `PLOT:BOXPLOT` | Class total box plot |
+
+*Grouped placeholders require a grouping column (class/major/school) in the data.
 
 **NEVER** include chart placeholders if chart generation failed — but ALWAYS ensure the markdown text includes exactly 12 placeholders if charts were generated successfully.
 

@@ -69,6 +69,11 @@ def parse_markdown_simple(markdown_text):
     return sections
 
 
+def render_markdown_html(text):
+    """Convert simple markdown (bold) to HTML."""
+    if not text: return text
+    return re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+
 def simple_markdown_to_html_with_tables(text):
     """Enhanced Markdown to HTML with table support."""
     lines = text.split('\n')
@@ -135,7 +140,7 @@ def simple_markdown_to_html_with_tables(text):
                 
             for idx, cell in enumerate(table_rows[0]):
                 style = header_styles[idx] if idx < len(header_styles) else ''
-                html.append(f'<th style="{style}">{cell.strip()}</th>')
+                html.append(f'<th style="{style}">{render_markdown_html(cell.strip())}</th>')
             
             html.append('</tr></thead><tbody>')
 
@@ -145,7 +150,7 @@ def simple_markdown_to_html_with_tables(text):
                 html.append('<tr>')
                 for idx, cell in enumerate(cells):
                     style = header_styles[idx] if idx < len(header_styles) else ''
-                    html.append(f'<td style="{style}">{cell.strip()}</td>')
+                    html.append(f'<td style="{style}">{render_markdown_html(cell.strip())}</td>')
                 html.append('</tr>')
             
             html.append('</tbody></table>')
@@ -188,6 +193,19 @@ def simple_markdown_to_html_with_tables(text):
     return ''.join(html)
 
 
+def add_styled_paragraph(doc, text):
+    """Add paragraph with bold support for **text** syntax."""
+    if not text: return
+    parts = text.split('**')
+    p = doc.add_paragraph()
+    for i, part in enumerate(parts):
+        if not part: continue
+        run = p.add_run(part)
+        # odd indices (1, 3, etc) are inside ** **
+        if i % 2 == 1:
+            run.bold = True
+    return p
+
 def create_word_report(markdown_text, image_paths, output_path):
     """Create Word report from markdown and charts."""
     doc = Document()
@@ -203,11 +221,47 @@ def create_word_report(markdown_text, image_paths, output_path):
         i = 0
         while i < len(content_lines):
             line = content_lines[i].strip()
+            i += 1
+
+            # Check for Markdown Table
+            if line.startswith('|'):
+                table_rows = [line]
+                while i < len(content_lines) and content_lines[i].strip().startswith('|'):
+                    table_rows.append(content_lines[i].strip())
+                    i += 1
+                
+                if table_rows:
+                    clean_rows = []
+                    for r in table_rows:
+                        cells = [c.strip() for c in r.split('|')[1:-1]]
+                        # Detect separator row (contains only -, :, and spaces)
+                        if not all(re.match(r'^[:\-\s]+$', c) for c in cells):
+                            clean_rows.append(cells)
+                    
+                    if clean_rows:
+                        table = doc.add_table(rows=len(clean_rows), cols=len(clean_rows[0]))
+                        table.style = 'Table Grid'
+                        for r_idx, row_data in enumerate(clean_rows):
+                            for c_idx, cell_text in enumerate(row_data):
+                                cell = table.cell(r_idx, c_idx)
+                                p = cell.paragraphs[0]
+                                p.clear()
+                                parts = cell_text.split('**')
+                                for p_idx, part in enumerate(parts):
+                                    if not part: continue
+                                    run = p.add_run(part)
+                                    if p_idx % 2 == 1:
+                                        run.bold = True
+                                p.alignment = 1
+                continue
+            if line == '':
+                continue
 
             is_image_line = line.startswith('![') or line.startswith('[PLOT:')
             if is_image_line:
                 chart_placeholder = line
                 chart_name = ""
+                chart_name_key = ""
 
                 if line.startswith('!['):
                     markdown_image = line
@@ -232,11 +286,8 @@ def create_word_report(markdown_text, image_paths, output_path):
 
                 if not found:
                     print(f"Warning: Chart not found for placeholder: {chart_placeholder}")
-            elif line:
-                p = doc.add_paragraph(line)
-                if line.startswith('**') and line.endswith('**'):
-                    p.runs[0].bold = True
-            i += 1
+            else:
+                add_styled_paragraph(doc, line)
 
     doc.save(output_path)
     return output_path
