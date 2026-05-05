@@ -1,3 +1,24 @@
+# Generated outputs (user-specific)
 reports/
+
+# Agent working directory
+.sisyphus/
+
+# Test data
+test/
+
+# Agent internal documentation
+AGENTS.md
+
+# Python cache
 __pycache__/
 *.pyc
+*.pyo
+
+# Swap files
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
