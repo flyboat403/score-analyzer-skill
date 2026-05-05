@@ -47,7 +47,8 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 4.  **Verify (MANDATORY)**: Before delivering, check all outputs:
     - **Dynamic passing/excellent rates** (NOT optional — MUST calculate):
         - Report contains "动态及格线" / "动态及格率" / "相对优秀线" keywords?
-        - Passing line is percentile-based (P80), NOT fixed 60-point threshold.
+        - Passing line is percentile-based (P20, surpassing bottom 20%), NOT fixed 60-point threshold.
+        - Excellent line is percentile-based (P80, entering top 20%).
         - If absolute pass rate (<60) is extremely low → use dynamic thresholds to interpret relative ranking.
     - **Fine-grained score segments**: Report.md contains segment stats (e.g., "90-100分", "80-89分")?
     - **Charts**: `ls reports/charts/*.png | wc -l` equals 12 (or 9 if no grouping)?

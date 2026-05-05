@@ -8,10 +8,10 @@
     reports/dynamic_thresholds.json - JSON格式的动态指标
 
 概念说明：
-    - 动态及格线 (D-G): P80百分位数，即排在前20%之外的门槛
-    - 动态及格率: 达到D-G分数的学生比例（理论≈20%）
-    - 相对优秀线 (D-E): P20百分位数，即前20%的门槛
-    - 相对优秀率: 达到D-E分数的学生比例（理论≈20%）
+    - 动态及格线 (D-G): P20百分位数，即超越后20%同学的门槛（相对及格）
+    - 动态及格率: 达到D-G分数的学生比例（理论≈80%，实际有偏差）
+    - 相对优秀线 (D-E): P80百分位数，即排进前20%的门槛（相对优秀）
+    - 相对优秀率: 达到D-E分数的学生比例（理论≈20%，实际有偏差）
 """
 
 import argparse
@@ -38,8 +38,8 @@ def compute_dynamic_thresholds(df: pd.DataFrame) -> dict:
     if len(scores) == 0:
         return {"error": "无有效分数数据"}
     
-    d_g = np.percentile(scores, 80)  # P80 = 动态及格线
-    d_e = np.percentile(scores, 20)  # P20 = 相对优秀线
+    d_g = np.percentile(scores, 20)  # P20 = 动态及格线（超越后20%）
+    d_e = np.percentile(scores, 80)  # P80 = 相对优秀线（排进前20%）
     
     dynamic_pass_rate = (scores >= d_g).sum() / len(scores) * 100
     dynamic_excellent_rate = (scores >= d_e).sum() / len(scores) * 100
@@ -54,8 +54,8 @@ def compute_dynamic_thresholds(df: pd.DataFrame) -> dict:
         subject_scores = df[df["subject"] == subject]["value"].dropna().values
         if len(subject_scores) > 0:
             subject_thresholds[subject] = {
-                "动态及格线_D-G": round(float(np.percentile(subject_scores, 80)), 2),
-                "相对优秀线_D-E": round(float(np.percentile(subject_scores, 20)), 2),
+                "动态及格线_D-G_P20": round(float(np.percentile(subject_scores, 20)), 2),
+                "相对优秀线_D-E_P80": round(float(np.percentile(subject_scores, 80)), 2),
                 "平均分": round(float(subject_scores.mean()), 2),
                 "最高分": round(float(subject_scores.max()), 2),
                 "最低分": round(float(subject_scores.min()), 2),
@@ -64,10 +64,10 @@ def compute_dynamic_thresholds(df: pd.DataFrame) -> dict:
     
     result = {
         "总体动态指标": {
-            "动态及格线_D-G": round(d_g, 2),
-            "动态及格率": round(dynamic_pass_rate, 1),
-            "相对优秀线_D-E": round(d_e, 2),
-            "相对优秀率": round(dynamic_excellent_rate, 1),
+            "动态及格线_D-G_P20": round(d_g, 2),
+            "动态及格率_超越后20%": round(dynamic_pass_rate, 1),
+            "相对优秀线_D-E_P80": round(d_e, 2),
+            "相对优秀率_排进前20%": round(dynamic_excellent_rate, 1),
             "绝对及格率_>=60": round(absolute_pass_rate, 1),
             "绝对优秀率_>=85": round(absolute_excellent_rate, 1),
             "建议使用动态阈值": recommend_dynamic,
@@ -101,16 +101,16 @@ def generate_interpretation(
     if recommend_dynamic:
         return (
             f"本次考试题目较难，绝对及格率（≥60分）仅为{absolute_pass_rate:.1f}%。"
-            f"建议使用动态阈值解释相对排名：动态及格线为{d_g:.1f}分（P80），"
-            f"达到该分数的学生占{dynamic_pass_rate:.1f}%，处于年级中上游位置。"
+            f"建议使用动态阈值解释相对排名：动态及格线为{d_g:.1f}分（P20），"
+            f"达到该分数的学生超越后20%同学，占{dynamic_pass_rate:.1f}%。"
             f"报告中应说明：'虽然绝对及格率较低，但从动态阈值看，"
-            f"约{dynamic_pass_rate:.0f}%的学生达到了相对及格标准。'"
+            f"约{dynamic_pass_rate:.0f}%的学生超越了后20%，处于相对合格水平。'"
         )
     else:
         return (
             f"本次考试难度适中，绝对及格率（≥60分）为{absolute_pass_rate:.1f}%。"
-            f"动态阈值作为补充参考：动态及格线{d_g:.1f}分，动态及格率{dynamic_pass_rate:.1f}%。"
-            f"报告中可同时展示绝对和动态两种及格率指标。"
+            f"动态阈值作为补充参考：动态及格线{d_g:.1f}分（P20，超越后20%），"
+            f"动态及格率{dynamic_pass_rate:.1f}%。报告中可同时展示绝对和动态两种指标。"
         )
 
 
@@ -157,9 +157,9 @@ def main():
     
     print("\n=== 动态阈值摘要 ===")
     overall = result["总体动态指标"]
-    print(f"动态及格线 (D-G): {overall['动态及格线_D-G']}分")
-    print(f"动态及格率: {overall['动态及格率']}%")
-    print(f"相对优秀线 (D-E): {overall['相对优秀线_D-E']}分")
+    print(f"动态及格线 (D-G, P20): {overall['动态及格线_D-G_P20']}分")
+    print(f"动态及格率 (超越后20%): {overall['动态及格率_超越后20%']}%")
+    print(f"相对优秀线 (D-E, P80): {overall['相对优秀线_D-E_P80']}分")
     print(f"绝对及格率 (>=60): {overall['绝对及格率_>=60']}%")
     print(f"建议使用动态阈值: {'是' if overall['建议使用动态阈值'] else '否'}")
     print(f"\n解读建议:\n{result['解读建议']}")
