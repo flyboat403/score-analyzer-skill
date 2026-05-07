@@ -25,13 +25,16 @@ FONT_CANDIDATES = [
 
 
 def setup_chinese_font() -> Optional[fm.FontProperties]:
-    known_path = "/root/studyScoreExtract/方正仿宋_GB2312.ttf"
-    if os.path.exists(known_path):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    assets_font = os.path.join(script_dir, "..", "assets", "思源黑体 CN Normal.otf")
+    assets_font = os.path.abspath(assets_font)
+    
+    if os.path.exists(assets_font):
         try:
-            return fm.FontProperties(fname=known_path)
+            return fm.FontProperties(fname=assets_font)
         except Exception:
             pass
-
+    
     for font_name in FONT_CANDIDATES:
         if font_name.startswith('/'):
             if os.path.exists(font_name):

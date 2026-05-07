@@ -254,7 +254,13 @@ class ChartGenerator:
     def __init__(self, analyzer: ScoreAnalyzerV2, output_dir: str, font_path: Optional[str] = None):
         self.analyzer = analyzer
         self.output_dir = output_dir
-        self.font_path = font_path or "/root/studyScoreExtract/方正仿宋_GB2312.ttf"
+        
+        if font_path:
+            self.font_path = font_path
+        else:
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            self.font_path = os.path.join(script_dir, "..", "assets", "思源黑体 CN Normal.otf")
+        
         self.font_prop, font_found = self._setup_chinese_font()
         self.font_warning = not font_found
         self.max_mean = 100
