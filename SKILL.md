@@ -44,21 +44,25 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
     - MUST include dynamic stats (D-G, D-E from JSON), fine-grained segments, and 12 chart placeholders.
 2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
 3.  **Assemble**: `python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "REPORT.md" --output reports/`
-4.  **Verify (MANDATORY)**: Before delivering, check all outputs:
+4.  **Verify (MANDATORY)**: Before delivering, check ALL outputs:
     - **Dynamic passing/excellent rates** (NOT optional — MUST calculate):
         - Report contains "动态及格线" / "动态及格率" / "相对优秀线" keywords?
         - Passing line is percentile-based (P20, surpassing bottom 20%), NOT fixed 60-point threshold.
         - Excellent line is percentile-based (P80, entering top 20%).
-        - If absolute pass rate (<60) is extremely low → use dynamic thresholds to interpret relative ranking.
     - **Fine-grained score segments**: Report.md contains segment stats (e.g., "90-100分", "80-89分")?
-    - **Charts**: `ls reports/charts/*.png | wc -l` equals 12 (or 9 if no grouping)?
+    - **Chart files**: `ls reports/charts/*.png | wc -l` equals 12 (or 9 if no grouping)?
+    - **Chart file sizes**: Each PNG > 10KB (not empty/blank)? `ls -la reports/charts/*.png | awk '$5 < 10000 {print "TOO SMALL: "$0}'`
+    - **HTML embedded images**: `reports/report.html` contains valid base64 charts?
+        - Count: `grep -c 'data:image/png;base64' reports/report.html` ≥ 12?
+    - **Word embedded images**: Are charts actually embedded in `report.docx`?
+        - Count: `python3 -c "from docx import Document; print(len(Document('reports/report.docx').element.xpath('.//a:blip')))"` ≥ 12?
+    - **Placeholder replacement complete**: No raw `PLOT:XXX` remains?
+        - HTML: `grep -c 'PLOT:' reports/report.html` = 0?
     - **Individual reports**: `ls reports/individual_reports/*.html | wc -l` equals student count?
-    - **HTML report**: `reports/report.html` exists and contains embedded charts (base64)?
-    - **Word report**: `reports/report.docx` exists and size > 100KB?
+    - **Word report**: Size > 100KB?
     - **Data consistency (Cross-Phase)**:
         - Student count in report matches data file row count?
         - Subject count in report matches unique subjects in data?
-        - If report mentions "共XX名学生" or "XX科目" → verify against actual data counts.
     - If ANY check fails → report issue to user before continuing.
 5.  **Deliver**: `reports/report.zip`
 
