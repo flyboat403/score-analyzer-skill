@@ -10,7 +10,11 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
-import seaborn as sns
+try:
+    import seaborn as sns
+    HAS_SEABORN = True
+except ImportError:
+    HAS_SEABORN = False
 import os
 import sys
 import argparse
@@ -30,13 +34,14 @@ CHART_CONFIG = {
 
 # Font candidates
 FONT_CANDIDATES = [
-    "SimHei",
-    "Microsoft YaHei",
-    "WenQuanYi Micro Hei",
-    "Noto Sans CJK SC",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
-    "/root/studyScoreExtract/方正仿宋_GB2312.ttf",
+    "C:/Windows/Fonts/msyh.ttc",
+    "C:/Windows/Fonts/simhei.ttf",
+    "C:/Windows/Fonts/simsun.ttc",
+    "/System/Library/Fonts/PingFang.ttc",
+    "/Library/Fonts/Arial Unicode.ttf",
+    "Noto Sans CJK SC",
 ]
 
 class ScoreAnalyzerV2:
@@ -564,8 +569,20 @@ class ChartGenerator:
             return path if save else fig
 
         fig, ax = plt.subplots(figsize=(8, 6))
-        sns.heatmap(corr, annot=True, cmap='RdYlGn', vmin=-1, vmax=1,
-                   linewidths=0.5, ax=ax, fmt='.2f')
+        if HAS_SEABORN:
+            sns.heatmap(corr, annot=True, cmap='RdYlGn', vmin=-1, vmax=1,
+                       linewidths=0.5, ax=ax, fmt='.2f')
+        else:
+            im = ax.imshow(corr.values, cmap='RdYlGn', aspect='auto', vmin=-1, vmax=1)
+            ax.set_xticks(range(len(corr.columns)))
+            ax.set_xticklabels(corr.columns)
+            ax.set_yticks(range(len(corr.index)))
+            ax.set_yticklabels(corr.index)
+            for i in range(len(corr)):
+                for j in range(len(corr)):
+                    ax.text(j, i, f'{corr.values[i, j]:.2f}',
+                           ha='center', va='center', fontsize=8)
+            plt.colorbar(im, ax=ax)
         ax.set_title('科目成绩相关性热力图', fontproperties=self.font_prop)
 
         for label in ax.get_xticklabels():

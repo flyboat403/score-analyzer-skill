@@ -281,7 +281,8 @@ def create_word_report(markdown_text, image_paths, output_path):
                                 doc.add_picture(path, width=Inches(6))
                                 found = True
                             except Exception as e:
-                                print(f"Warning: Failed to insert image: {e}")
+                                print(f"WARNING: Failed to insert chart '{chart_name_key}' from '{path}': {e}")
+                                print(f"           File: exists={os.path.exists(path)}, size={os.path.getsize(path) if os.path.exists(path) else 'N/A'}")
                             break
 
                 if not found:

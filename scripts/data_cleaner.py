@@ -69,6 +69,32 @@ def clean_data(input_path: str | Path, output_path: str | Path) -> pd.DataFrame:
 
     df = pd.read_csv(input_path, dtype=str)
 
+    # Column name alias mapping for common variations
+    ALIAS_MAP = {
+        "id": "student_id",
+        "studentno": "student_id",
+        "name": "student_name",
+        "subjectname": "subject",
+        "subject": "subject",
+        "科目": "subject",
+        "score": "value",
+        "total_score": "value",
+        "total": "value",
+        "分数": "value",
+        "成绩": "value",
+        "班级": "student_class",
+        "年级": "student_grade",
+        "学校": "student_school",
+        "专业": "student_major",
+    }
+    # Apply aliases (case-insensitive lookup)
+    col_lower_map = {c.lower().strip(): c for c in df.columns}
+    rename_map = {}
+    for alias, standard in ALIAS_MAP.items():
+        if alias.lower() in col_lower_map and standard not in df.columns:
+            rename_map[col_lower_map[alias.lower()]] = standard
+    df.rename(columns=rename_map, inplace=True)
+
     col_map = {c.lower(): c for c in df.columns}
     missing = [c for c in REQUIRED_COLS if c not in col_map]
     if missing:

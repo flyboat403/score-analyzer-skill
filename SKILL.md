@@ -21,6 +21,30 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 
 ### Phase 1: Data Preparation
 1.  **Extract**: `python3 scripts/extract_data.py --input <file> --output reports/data.csv`
+    - **Complex/Merged headers** (Multi-level, Title rows) → **SKIP** `extract_data.py`. Agent must manually process and output `reports/data.csv` in **strict Long Format**:
+      ```
+      student_id,student_name,student_class,subject,value
+      001,张三,一班,语文分数,85.0
+      001,张三,一班,数学分数,92.0
+      002,李四,一班,语文分数,88.0
+      ```
+      - Column names **MUST** be: `student_id`, `student_name`, `subject`, `value`
+      - Format **MUST** be Long Format (one row per subject per student)
+      - `value` **MUST** be numeric float
+      - Python pattern to use:
+        ```python
+        df = pd.read_excel(file, header=n)  # n = header row index (try 0, 1, 2)
+        df.rename(columns={'学号': 'student_id', '姓名': 'student_name'}, inplace=True)
+        id_cols = ['student_id', 'student_name']
+        if 'student_class' in df.columns:
+            id_cols.append('student_class')
+        df_long = df.melt(id_vars=id_cols, var_name='subject', value_name='value')
+        df_long = df_long.dropna(subset=['value'])
+        df_long['value'] = pd.to_numeric(df_long['value'], errors='coerce')
+        df_long.to_csv('reports/data.csv', index=False)
+        ```
+      - **DO**: Output Long Format, use standard column names, handle merged cells
+      - **DON'T**: Keep Wide Format (one column per subject), pass raw columns to data_cleaner
 2.  **Clean**: Remove invalid data/grades (A/B/C). **Must Run**: `python3 scripts/data_cleaner.py --input reports/data.csv --output reports/data.csv`
 3.  **Tag (Recommended)**: `python3 scripts/tagger.py --input reports/data.csv --output reports/students_tags.csv` (Generates "偏科预警" etc.)
 4.  **Individual Reports (Optional)**: `python3 scripts/individual_reports.py --input reports/data.csv --output reports/individual_reports`

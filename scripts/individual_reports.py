@@ -14,13 +14,19 @@ import base64
 from typing import Optional, Dict, Tuple, List
 
 FONT_CANDIDATES = [
-    "SimHei",
-    "Microsoft YaHei",
-    "WenQuanYi Micro Hei",
+    # Linux paths
+    "/root/studyScoreExtract/方正仿宋_GB2312.ttf",
     "Noto Sans CJK SC",
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
-    "/root/studyScoreExtract/方正仿宋_GB2312.ttf",
+    # Windows paths
+    "C:/Windows/Fonts/msyh.ttc",       # Microsoft YaHei
+    "C:/Windows/Fonts/simhei.ttf",      # SimHei
+    "C:/Windows/Fonts/simsun.ttc",      # SimSun
+    "C:/Windows/Fonts/mingliu.ttc",     # MingLiU
+    # macOS paths
+    "/System/Library/Fonts/PingFang.ttc",
+    "/Library/Fonts/Arial Unicode.ttf",
 ]
 
 
