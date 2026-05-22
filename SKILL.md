@@ -66,6 +66,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
     - **MANDATORY**: Read `reports/dynamic_thresholds.json` for percentile-based metrics.
     - Read `references/analysis_prompt.md` for guidelines.
     - MUST include dynamic stats (D-G, D-E from JSON), fine-grained segments, and 12 chart placeholders.
+    - ⚠️ CRITICAL: Chart placeholders MUST use inline format `![描述](PLOT:KEY)`. **NEVER use tables or appendix formats.** The assemble script only recognizes inline placeholders.
 2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
 3.  **Assemble**: `python3 scripts/assemble_reports.py --data reports/data.csv --charts reports/charts/ --report "REPORT.md" --output reports/`
 4.  **Verify (MANDATORY)**: Before delivering, check ALL outputs:
@@ -82,6 +83,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
         - Count: `python3 -c "from docx import Document; print(len(Document('reports/report.docx').element.xpath('.//a:blip')))"` ≥ 12?
     - **Placeholder replacement complete**: No raw `PLOT:XXX` remains?
         - HTML: `grep -c 'PLOT:' reports/report.html` = 0?
+    - ⚠️ Pre-assembly format check: Run `grep -c '!\[.*\](PLOT:' reports/report_content.md` → must be ≥ 12 before running assemble_reports.py. If result is 0, the report has placeholders in wrong format (e.g. table).
     - **Individual reports**: `ls reports/individual_reports/*.html | wc -l` equals student count?
     - **Word report**: Size > 100KB?
     - **Data consistency (Cross-Phase)**:

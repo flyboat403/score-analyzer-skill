@@ -381,14 +381,13 @@ def create_html_report(markdown_text, image_paths, output_path):
             alt_text = keys[0] if keys else 'chart'
 
         for key in keys:
-            upper_key = key.upper()
-            if not upper_key.isascii():
-                continue
-            for variant in [upper_key, upper_key.lower(), upper_key.capitalize()]:
+            variants = [key, key.upper(), key.lower(), key.capitalize()]
+            for variant in variants:
                 regex_pattern = r'!\[[^\]]*\]\(PLOT:' + re.escape(variant) + r'\)'
                 content = re.sub(regex_pattern, f'<img src="{img_data_uri}" alt="{alt_text}">', content)
 
-            compact_regex = r'\[PLOT:' + re.escape(upper_key) + r'\]'
+            # Also handle compact placeholders: [PLOT:XXX]
+            compact_regex = r'\[PLOT:' + re.escape(key) + r'\]'
             content = re.sub(compact_regex, f'<img src="{img_data_uri}" alt="{alt_text}">', content)
 
     html += '<div>' + content + '</div></body></html>'
