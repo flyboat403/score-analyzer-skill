@@ -239,7 +239,11 @@ def create_word_report(markdown_text, image_paths, output_path):
                             clean_rows.append(cells)
                     
                     if clean_rows:
-                        table = doc.add_table(rows=len(clean_rows), cols=len(clean_rows[0]))
+                        max_cols = max(len(r) for r in clean_rows)
+                        for r in clean_rows:
+                            while len(r) < max_cols:
+                                r.append('')
+                        table = doc.add_table(rows=len(clean_rows), cols=max_cols)
                         table.style = 'Table Grid'
                         for r_idx, row_data in enumerate(clean_rows):
                             for c_idx, cell_text in enumerate(row_data):

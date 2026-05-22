@@ -102,7 +102,13 @@ def clean_data(input_path: str | Path, output_path: str | Path) -> pd.DataFrame:
         print(f"  Found columns: {list(df.columns)}")
         sys.exit(1)
 
-    df.rename(columns={col_map[c]: c for c in col_map}, inplace=True)
+    rename_map2 = {}
+    for standard in REQUIRED_COLS:
+        actual = col_map.get(standard)
+        if actual and actual != standard:
+            rename_map2[actual] = standard
+    if rename_map2:
+        df.rename(columns=rename_map2, inplace=True)
 
     parsed = df["value"].apply(parse_value)
     mask = parsed.notna()
