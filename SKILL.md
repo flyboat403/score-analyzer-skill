@@ -62,6 +62,12 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
     - If ANY check fails → fix data issues before continuing.
 
 ### Phase 2: Analysis & Generation
+
+Before writing, ask yourself:
+- **读者是谁**（校长/教研组长/班主任）？决定详略与措辞。
+- **读者最关心的 3 个指标**（通常含及格率、优秀率、班级差异）— 必须显眼呈现。
+- **数据中最反常的发现**（极端分数/异常缺考/班级断层）— 这是报告的"钩子"。
+
 1.  **Analyze**: Agent reads data, finds patterns, writes full Markdown report.
     - **MANDATORY**: Read `reports/dynamic_thresholds.json` for percentile-based metrics.
     - **MANDATORY - READ ENTIRE FILE**: Read `references/analysis_prompt.md` (~430 lines) completely from start to finish before writing the report. NEVER set range limits when reading this file.
@@ -78,9 +84,9 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
     - **Chart files**: `ls reports/charts/*.png | wc -l` equals 12 (or 11 if no grouping — radar skipped)?
     - **Chart file sizes**: Each PNG > 10KB (not empty/blank)? `ls -la reports/charts/*.png | awk '$5 < 10000 {print "TOO SMALL: "$0}'`
     - **HTML embedded images**: `reports/report.html` contains valid base64 charts?
-        - Count: `grep -c 'data:image/png;base64' reports/report.html` ≥ 12?
+        - Count: `grep -c 'data:image/png;base64' reports/report.html` equals PNG count (12, or 11 if no grouping)?
     - **Word embedded images**: Are charts actually embedded in `report.docx`?
-        - Count: `python3 -c "from docx import Document; print(len(Document('reports/report.docx').element.xpath('.//a:blip')))"` ≥ 12?
+        - Count: `python3 -c "from docx import Document; print(len(Document('reports/report.docx').element.xpath('.//a:blip')))"` equals PNG count (12, or 11 if no grouping)?
     - **Placeholder replacement complete**: No raw `PLOT:XXX` remains?
         - HTML: `grep -c 'PLOT:' reports/report.html` = 0?
     - ⚠️ Pre-assembly format check: Run `grep -c '!\[.*\](PLOT:' reports/report_content.md` → must equal the generated PNG count (12, or 11 if no grouping) before running assemble_reports.py. If result is 0, the report has placeholders in wrong format (e.g. table).
@@ -130,8 +136,8 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 
 - **NEVER pass minimal text** like `"Test Report"` to `assemble_reports.py`.
   *Why*: The script embeds EXACTLY what you pass. If the report content is short, the final docx/html will appear "empty". You MUST generate a full markdown analysis with statistics tables and narrative text.
-- **NEVER include all 9 placeholders** when no grouping data exists.
-  *Why*: `generate_charts.py` skips charts 7-9 if grouping is missing. Assembly will leave raw placeholder text in the document.
+- **NEVER leave a placeholder whose PNG does not exist.** With no grouping column: `PLOT:COMPARISON`/`PLOT:BOXPLOT` render "无分组数据" notice images (PNGs exist — keep placeholders); `PLOT:RADAR` gets NO PNG — remove its placeholder and note "因无分组数据，雷达图未生成" in place.
+  *Why*: Assembly silently drops missing-PNG placeholders in Word but leaks raw `PLOT:XXX` text into report.html, failing verification. (Aligned with Decision Tree #2 and analysis_prompt.md 通用规则.)
 - **NEVER use `extract_data.py` for complex Excel files** (e.g., merged headers, sub-headers).
   *Why*: It fails on `IndexError` when detecting headers on complex layouts (we learned this the hard way!). Use pandas + Agent intelligence instead.
 - **NEVER include `report.zip` in the zip archive**.
