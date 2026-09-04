@@ -3,8 +3,9 @@ name: score-analyzer
 description: >
   Analyze student score data from Excel files and generate professional analysis reports.
   Use when the user provides an Excel score sheet (.xlsx), asks to analyze student scores, test results,
-  exam data, or grade data. The Agent performs all analysis directly using Python scripts (pandas, matplotlib)
-  and its own intelligence for report writing—no external LLM API needed during execution.
+  exam data, or grade data — including multi-subject grade sheets, class/school grouping columns,
+  or complex merged/multi-level headers. The Agent performs all analysis locally with Python
+  scripts (pandas, matplotlib) and its own intelligence for report writing.
   Supports data cleaning, statistical analysis, chart generation (score distribution, class comparison,
   radar, trends, boxplot, heatmap, deviation, top-bottom), narrative report writing, and ZIP package output.
   Triggers: "analyze scores", "score report", "exam analysis", "成绩分析", "成绩报告",
@@ -70,7 +71,7 @@ Before writing, ask yourself:
 
 1.  **Analyze**: Agent reads data, finds patterns, writes full Markdown report.
     - **MANDATORY**: Read `reports/dynamic_thresholds.json` for percentile-based metrics.
-    - **MANDATORY - READ ENTIRE FILE**: Read `references/analysis_prompt.md` (~430 lines) completely from start to finish before writing the report. NEVER set range limits when reading this file.
+    - **MANDATORY - READ ENTIRE FILE**: Read `references/analysis_prompt.md` (413 lines) completely from start to finish before writing the report. NEVER set range limits when reading this file.
     - MUST include dynamic stats (D-G, D-E from JSON), fine-grained segments, and 12 chart placeholders.
     - ⚠️ CRITICAL: Chart placeholders MUST use inline format `![描述](PLOT:KEY)`. **NEVER use tables or appendix formats.** The assemble script only recognizes inline placeholders.
 2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
@@ -100,7 +101,7 @@ Before writing, ask yourself:
 
 ## Chart Placeholders & Template
 
-**For the full report structure and analysis guidelines, READ (MANDATORY — ENTIRE FILE):** [`references/analysis_prompt.md`](references/analysis_prompt.md) (~430 lines). Read completely from start to finish — NEVER set range limits or skim. **Do NOT load** `README.md`, `AGENTS.md`, or `test/` contents — development docs, not needed for execution.
+**For the full report structure and analysis guidelines, READ (MANDATORY — ENTIRE FILE):** [`references/analysis_prompt.md`](references/analysis_prompt.md) (413 lines). Read completely from start to finish — NEVER set range limits or skim. **Do NOT load** `README.md`, `AGENTS.md`, or `test/` contents — development docs, not needed for execution.
 
 **Chart Key Reference** (⚠️ 下表仅为 KEY 速查 — 裸键 `PLOT:XXX` 不能直接写入报告！必须使用完整行内格式 `![描述](PLOT:KEY)`。12 个 KEY 的完整行内格式以 `references/analysis_prompt.md`「图表-章节映射关系」表为唯一权威来源):
 
