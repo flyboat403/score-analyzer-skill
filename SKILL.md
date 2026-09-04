@@ -50,7 +50,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 4.  **Individual Reports (Optional)**: `python3 scripts/individual_reports.py --input reports/data.csv --output reports/individual_reports`
 5.  **Dynamic Thresholds (MANDATORY)**: Calculate percentile-based passing/excellent thresholds.
     - `python3 scripts/dynamic_thresholds.py --input reports/data.csv --output reports/dynamic_thresholds.json`
-    - Output JSON contains: D-G (P80 passing line), D-E (P20 excellent line), pass rates.
+    - Output JSON contains: D-G (P20 passing line), D-E (P80 excellent line), pass rates.
     - Read this file when writing the report — provides dynamic metrics to interpret difficult exams.
 6.  **Verify Phase 1 (MANDATORY)**: Before proceeding to analysis, validate data quality:
     - **Cleaned data exists**: `reports/data.csv` (or `cleaned_data.csv`) file present?
@@ -75,7 +75,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
         - Passing line is percentile-based (P20, surpassing bottom 20%), NOT fixed 60-point threshold.
         - Excellent line is percentile-based (P80, entering top 20%).
     - **Fine-grained score segments**: Report.md contains segment stats (e.g., "90-100分", "80-89分")?
-    - **Chart files**: `ls reports/charts/*.png | wc -l` equals 12 (or 9 if no grouping)?
+    - **Chart files**: `ls reports/charts/*.png | wc -l` equals 12 (or 11 if no grouping — radar skipped)?
     - **Chart file sizes**: Each PNG > 10KB (not empty/blank)? `ls -la reports/charts/*.png | awk '$5 < 10000 {print "TOO SMALL: "$0}'`
     - **HTML embedded images**: `reports/report.html` contains valid base64 charts?
         - Count: `grep -c 'data:image/png;base64' reports/report.html` ≥ 12?
@@ -83,7 +83,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
         - Count: `python3 -c "from docx import Document; print(len(Document('reports/report.docx').element.xpath('.//a:blip')))"` ≥ 12?
     - **Placeholder replacement complete**: No raw `PLOT:XXX` remains?
         - HTML: `grep -c 'PLOT:' reports/report.html` = 0?
-    - ⚠️ Pre-assembly format check: Run `grep -c '!\[.*\](PLOT:' reports/report_content.md` → must be ≥ 12 before running assemble_reports.py. If result is 0, the report has placeholders in wrong format (e.g. table).
+    - ⚠️ Pre-assembly format check: Run `grep -c '!\[.*\](PLOT:' reports/report_content.md` → must equal the generated PNG count (12, or 11 if no grouping) before running assemble_reports.py. If result is 0, the report has placeholders in wrong format (e.g. table).
     - **Individual reports**: `ls reports/individual_reports/*.html | wc -l` equals student count?
     - **Word report**: Size > 100KB?
     - **Data consistency (Cross-Phase)**:
@@ -96,7 +96,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 
 **For the full report structure and analysis guidelines, READ (MANDATORY — ENTIRE FILE):** [`references/analysis_prompt.md`](references/analysis_prompt.md) (~430 lines). Read completely from start to finish — NEVER set range limits or skim. **Do NOT load** `README.md`, `AGENTS.md`, or `test/` contents — development docs, not needed for execution.
 
-**Chart Key Reference** (⚠️ 下表仅为 KEY 速查 — 裸键 `PLOT:XXX` 不能直接写入报告！必须使用完整行内格式 `![描述](PLOT:KEY)`。可直接复制的完整清单见 `references/analysis_prompt.md` 第四步):
+**Chart Key Reference** (⚠️ 下表仅为 KEY 速查 — 裸键 `PLOT:XXX` 不能直接写入报告！必须使用完整行内格式 `![描述](PLOT:KEY)`。12 个 KEY 的完整行内格式以 `references/analysis_prompt.md`「图表-章节映射关系」表为唯一权威来源):
 
 | Category | Key | Chart |
 |----------|-------------|-------|
@@ -115,18 +115,14 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 
 *Grouped placeholders require a grouping column (class/major/school) in the data.
 
-**NEVER** include chart placeholders if chart generation failed — but ALWAYS ensure the markdown text includes exactly 12 placeholders if charts were generated successfully.
-
-**NEVER** write a minimal text report. Must include dynamic passing rates, fine-grained segments, and granular actionable advice.
+**NEVER** leave a placeholder whose PNG was not generated — replace it with a one-line note (e.g. "因无分组数据，雷达图未生成"). Otherwise the raw `PLOT:XXX` text leaks into report.html and fails verification. Keep ALL other placeholders.
 
 ## 🔧 Decision Tree (Before Starting)
 
-1. **Header Structure**:
-   - Simple flat headers (Row 0 is headers) → You can optionally use `extract_data.py` backup.
-   - **Complex/Merged headers** (Multi-level, Title rows) → **SKIP** `extract_data.py`. Use Agent's pandas/LLM intelligence directly to map columns.
+1. **Header Structure**: Follow Phase 1 Step 1 — flat headers may use `extract_data.py`; complex/merged headers MUST skip it (Agent processes manually, strict Long Format output).
 2. **Chart Generation**:
-   - Data has grouping column (class/major/school)? → Generate all **9** charts. Include ALL placeholders.
-   - **NO grouping column**? → Generate **6** charts. **MUST REMOVE** `PLOT:COMPARISON`, `PLOT:RADAR`, and `PLOT:BOXPLOT` from the report.
+   - Data has grouping column (class/major/school)? → All **12** charts generate. Include ALL 12 placeholders.
+   - **NO grouping column**? → **11** PNGs: `PLOT:COMPARISON`/`PLOT:BOXPLOT` render "无分组数据" notice images (keep their placeholders); `PLOT:RADAR` gets NO PNG → remove its placeholder, note "因无分组数据，雷达图未生成" in place.
 3. **Chinese Font Check**:
    - If charts show squares (tofu): Run `fc-list :lang=zh`. If missing, install `apt install fonts-noto-cjk` → Re-generate charts.
 
