@@ -854,6 +854,7 @@ def main():
     parser = argparse.ArgumentParser(description="Generate charts from student score CSV data")
     parser.add_argument("--input", "-i", required=True, help="Input CSV file path")
     parser.add_argument("--output", "-o", required=True, help="Output directory for charts")
+    parser.add_argument("--font", "-f", default=None, help="Path to Chinese font file for chart labels. Default: assets/思源黑体 CN Normal.otf")
     args = parser.parse_args()
 
     # Validate input file
@@ -876,7 +877,10 @@ def main():
 
     # Initialize analyzer and generator
     analyzer = ScoreAnalyzerV2(df)
-    generator = ChartGenerator(analyzer, args.output)
+    generator = ChartGenerator(analyzer, args.output, font_path=args.font)
+
+    if args.font:
+        print(f"Using custom font: {args.font}")
 
     # Generate charts
     print("Generating charts...")

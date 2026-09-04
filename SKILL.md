@@ -64,7 +64,7 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 ### Phase 2: Analysis & Generation
 1.  **Analyze**: Agent reads data, finds patterns, writes full Markdown report.
     - **MANDATORY**: Read `reports/dynamic_thresholds.json` for percentile-based metrics.
-    - Read `references/analysis_prompt.md` for guidelines.
+    - **MANDATORY - READ ENTIRE FILE**: Read `references/analysis_prompt.md` (~430 lines) completely from start to finish before writing the report. NEVER set range limits when reading this file.
     - MUST include dynamic stats (D-G, D-E from JSON), fine-grained segments, and 12 chart placeholders.
     - ⚠️ CRITICAL: Chart placeholders MUST use inline format `![描述](PLOT:KEY)`. **NEVER use tables or appendix formats.** The assemble script only recognizes inline placeholders.
 2.  **Charts**: `python3 scripts/generate_charts.py --input reports/data.csv --output reports/charts/`
@@ -94,11 +94,11 @@ Agent analyzes student Excel score sheets and produces professional reports. No 
 
 ## Chart Placeholders & Template
 
-**For the full report structure and analysis guidelines, READ:** [`references/analysis_prompt.md`](references/analysis_prompt.md)
+**For the full report structure and analysis guidelines, READ (MANDATORY — ENTIRE FILE):** [`references/analysis_prompt.md`](references/analysis_prompt.md) (~430 lines). Read completely from start to finish — NEVER set range limits or skim. **Do NOT load** `README.md`, `AGENTS.md`, or `test/` contents — development docs, not needed for execution.
 
-**Mandatory Chart Placeholders** (include all that apply — match count to generated charts):
+**Chart Key Reference** (⚠️ 下表仅为 KEY 速查 — 裸键 `PLOT:XXX` 不能直接写入报告！必须使用完整行内格式 `![描述](PLOT:KEY)`。可直接复制的完整清单见 `references/analysis_prompt.md` 第四步):
 
-| Category | Placeholder | Chart |
+| Category | Key | Chart |
 |----------|-------------|-------|
 | Overview | `PLOT:DISTRIBUTION` | Score distribution histogram |
 | | `PLOT:CDF` | Cumulative distribution function |
